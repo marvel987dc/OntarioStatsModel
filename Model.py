@@ -102,55 +102,77 @@ missing_data_summary = pd.DataFrame({
 print("\n🔍 Missing Data Summary:")
 print(missing_data_summary[missing_data_summary['Missing Values'] > 0].sort_values('Percentage', ascending=False))
 
-# Plot histograms for all numeric columns in the dataset to visualize the distribution of the data
-Group_data.hist(figsize=(18, 14), bins=30, color='skyblue', edgecolor='black')
-plt.suptitle("📊 Distribution of Numeric Variables", fontsize=18)
+#plotting
+sns.set(style="whitegrid")
+
+# Identify the target variable (assuming a column indicates fatality)
+fatality_columns = [col for col in Group_data.columns if 'fatal' in col.lower() or 'death' in col.lower()]
+target_col = fatality_columns[0] if fatality_columns else None
+
+# Plot the distribution of the target variable (if found)
+# Convert FATAL_NO into a binary target variable (Fatal: 1, Non-Fatal: 0)
+Group_data["Fatal_Collision"] = Group_data["FATAL_NO"].fillna(0).astype(float)  # Convert NaN to 0
+Group_data["Fatal_Collision"] = (Group_data["Fatal_Collision"] > 0).astype(
+    int)  # Convert to binary (1 if fatal, else 0)
+
+# Plot the cleaned distribution
+plt.figure(figsize=(6, 4))
+sns.countplot(x=Group_data["Fatal_Collision"], palette="coolwarm")
+plt.title("Distribution of Fatal vs. Non-Fatal Collisions")
+plt.xlabel("Collision Outcome")
+plt.ylabel("Count")
+plt.xticks([0, 1], ["Non-Fatal", "Fatal"])  # Ensure readable labels
 plt.show()
 
-# Plot box plots for all numeric columns in the dataset to visualize the distribution of the data
-plt.figure(figsize=(18, 14))
-sns.boxplot(data=numeric_cols, palette='viridis')
-plt.title("📦 Boxplot of Numeric Variables", fontsize=18)
-plt.show()
-
-# Calculate correlation
+# Correlation heatmap
+# Select only numeric columns (exclude text, dates, etc.)
 numeric_cols = Group_data.select_dtypes(include=['int64', 'float64'])
-correlation_matrix = numeric_cols.corr()
-
-# Plotting the heatmap
-plt.figure(figsize=(18, 14))
-sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', fmt='.2f', linewidths=0.5)
-plt.title("🔥 Correlation Heatmap", fontsize=18)
-plt.show()
-
-# Sampling the data to avoid overload
-sampled_data = Group_data.sample(500, random_state=53)
-
-# Create a pairplot
-sns.pairplot(sampled_data, hue='LIGHT', diag_kind='kde', palette='Set2')
-plt.suptitle("🌟 Pairplot of Sampled Data", fontsize=18, y=1.02)
-plt.show()
-
-# Plotting latitude and longitude, plotting the accident locations
+# Generate Correlation Heatmap
 plt.figure(figsize=(12, 8))
-sns.scatterplot(x='LONGITUDE', y='LATITUDE', data=Group_data, alpha=0.5, color='red')
-plt.title("📍 Accident Locations by Latitude and Longitude")
-plt.xlabel("Longitude")
-plt.ylabel("Latitude")
-plt.grid(True)
+sns.heatmap(numeric_cols.corr(), annot=True, cmap="coolwarm", fmt=".2f", linewidths=0.5)
+plt.title("Correlation Heatmap")
 plt.show()
 
-# Vehicle involvement columns
-vehicles = ['PEDESTRIAN', 'CYCLIST', 'AUTOMOBILE', 'MOTORCYCLE', 'TRUCK']
-
-# Count the occurrences of each vehicle type
-vehicle_counts = Group_data[vehicles].sum()
-
-# Plot pie chart
-plt.figure(figsize=(12, 8))
-plt.pie(vehicle_counts, labels=vehicle_counts.index, autopct='%1.1f%%', startangle=140, colors=sns.color_palette("pastel"))
-plt.title("🚗 Vehicle Involvement in Accidents")
+# Missing values heatmap
+plt.figure(figsize=(10, 6))
+sns.heatmap(Group_data.isnull(), cmap="viridis", cbar=False, yticklabels=False)
+plt.title("Missing Values Heatmap")
 plt.show()
+
+# Selecting numeric columns for histograms and boxplots
+numeric_cols = Group_data.select_dtypes(include=['int64', 'float64']).columns
+
+# Histograms for numerical features
+Group_data[numeric_cols].hist(figsize=(15, 10), bins=20, color="steelblue", edgecolor="black")
+plt.suptitle("Distribution of Numerical Features", fontsize=16)
+plt.show()
+
+# Select relevant numeric columns (excluding IDs and coordinates)
+exclude_cols = ["OBJECTID", "INDEX", "ACCNUM", "LATITUDE", "LONGITUDE", "x", "y"]
+filtered_numeric_cols = [col for col in numeric_cols if col not in exclude_cols]
+
+# Limit to the top 8 numerical features to avoid clutter
+top_features = filtered_numeric_cols[:8]
+
+# Create separate vertical boxplots
+plt.figure(figsize=(10, 6))
+sns.boxplot(data=Group_data[top_features], palette="coolwarm")
+plt.xticks(rotation=45)  # Rotate labels for better readability
+plt.title("Boxplots of Key Numeric Features")
+plt.show()
+
+# Cleaning the numeric dataset for pairplot
+clean_numeric_cols = [col for col in numeric_cols if
+                      Group_data[col].notna().all() and np.isfinite(Group_data[col]).all()]
+subset_cols = clean_numeric_cols[:5]  # Taking the first five cleaned numerical features for pairplot
+
+# Pairplot for a subset of numeric columns (if enough valid numeric columns exist)
+if len(subset_cols) > 1:
+    sns.pairplot(Group_data[subset_cols], diag_kind="kde", corner=True)
+    plt.suptitle("Pairplot of Selected Numerical Features", fontsize=16)
+    plt.show()
+else:
+    print("Not enough valid numeric columns available for pairplot.")
 
 
 
