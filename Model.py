@@ -139,8 +139,7 @@ target_col = fatality_columns[0] if fatality_columns else None
 # Plot the distribution of the target variable (if found)
 # Convert FATAL_NO into a binary target variable (Fatal: 1, Non-Fatal: 0)
 Group_data["Fatal_Collision"] = Group_data["FATAL_NO"].fillna(0).astype(float)  # Convert NaN to 0
-Group_data["Fatal_Collision"] = (Group_data["Fatal_Collision"] > 0).astype(
-    int)  # Convert to binary (1 if fatal, else 0)
+Group_data["Fatal_Collision"] = (Group_data["Fatal_Collision"] > 0).astype(int)  # Convert to binary (1 if fatal, else 0)
 
 # Plot the cleaned distribution
 plt.figure(figsize=(6, 4))
